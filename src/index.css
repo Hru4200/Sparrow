@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #10b981;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #059669;
+}
+
+/* Focus styles for accessibility */
+.focus-visible:focus {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
+}
+
+/* Credit Animation */
+@keyframes creditPop {
+  0% { 
+    transform: translate(-50%, -50%) scale(0.5); 
+    opacity: 0; 
+  }
+  20% { 
+    transform: translate(-50%, -50%) scale(1.2); 
+    opacity: 1; 
+  }
+  80% { 
+    transform: translate(-50%, -50%) scale(1); 
+    opacity: 1; 
+  }
+  100% { 
+    transform: translate(-50%, -50%) scale(1); 
+    opacity: 0; 
+  }
+}
+
+@keyframes sparkle {
+  0%, 100% { 
+    transform: scale(0) rotate(0deg); 
+    opacity: 0; 
+  }
+  50% { 
+    transform: scale(1) rotate(180deg); 
+    opacity: 1; 
+  }
+}
+
+.credit-animation-container {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+}
+
+.credit-animation-container.enter {
+  animation: creditPop 3s ease-out forwards;
+}
+
+.sparkle {
+  animation: sparkle 2s ease-out infinite;
+}
+
+/* Smooth transitions for all interactive elements */
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Credit Animation */
+@keyframes creditPop {
+  0% { 
+    transform: translate(-50%, -50%) scale(0.5); 
+    opacity: 0; 
+  }
+  20% { 
+    transform: translate(-50%, -50%) scale(1.2); 
+    opacity: 1; 
+  }
+  80% { 
+    transform: translate(-50%, -50%) scale(1); 
+    opacity: 1; 
+  }
+  100% { 
+    transform: translate(-50%, -50%) scale(1); 
+    opacity: 0; 
+  }
+}
+
+@keyframes sparkle {
+  0%, 100% { 
+    transform: scale(0) rotate(0deg); 
+    opacity: 0; 
+  }
+  50% { 
+    transform: scale(1) rotate(180deg); 
+    opacity: 1; 
+  }
+}
+
+.credit-animation-container {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+}
+
+.credit-animation-container.enter {
+  animation: creditPop 3s ease-out forwards;
+}
+
+.sparkle {
+  animation: sparkle 2s ease-out infinite;
+}

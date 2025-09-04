@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Drone, RechargeStop, RechargeRequest } from '../types';
-import { MapPin, Zap, Battery, Clock, Star, Navigation, AlertTriangle } from 'lucide-react';
+import { MapPin, Zap, Battery, Clock, Star, Navigation, AlertTriangle, Route } from 'lucide-react';
+import { calculateDistance } from '../utils/routeCalculations';
 
 interface MapViewProps {
   drones: Drone[];
@@ -20,16 +21,20 @@ export default function MapView({
   const [selectedDrone, setSelectedDrone] = useState<Drone | null>(null);
   const [selectedStop, setSelectedStop] = useState<RechargeStop | null>(null);
   const [showRoutes, setShowRoutes] = useState(true);
-  const [mapCenter, setMapCenter] = useState({ lat: 37.7749, lng: -122.4194 });
-  const [zoom, setZoom] = useState(12);
+  const [routeDistance, setRouteDistance] = useState<number | null>(null);
+  const [routeExceedsRange, setRouteExceedsRange] = useState(false);
 
-  // Simulate real-time updates
+  // Calculate route distance when both drone and stop are selected
   useEffect(() => {
-    const interval = setInterval(() => {
-      // This would update drone positions in a real app
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
+    if (selectedDrone && selectedStop) {
+      const distance = calculateDistance(selectedDrone.position, selectedStop.position);
+      setRouteDistance(distance);
+      setRouteExceedsRange(distance > selectedDrone.maxRange);
+    } else {
+      setRouteDistance(null);
+      setRouteExceedsRange(false);
+    }
+  }, [selectedDrone, selectedStop]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -49,6 +54,9 @@ export default function MapView({
   };
 
   const handleRequestRecharge = (droneId: string, stopId: string) => {
+    if (routeExceedsRange) {
+      return; // Prevent request if route exceeds range
+    }
     onCreateRechargeRequest(droneId, stopId);
     setSelectedDrone(null);
     setSelectedStop(null);
@@ -89,6 +97,41 @@ export default function MapView({
         </div>
       </div>
 
+      {/* Route Distance Panel */}
+      {routeDistance !== null && selectedDrone && selectedStop && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10">
+          <div className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-4 border ${
+            routeExceedsRange ? 'border-red-500' : 'border-green-500'
+          }`}>
+            <div className="flex items-center space-x-2 mb-2">
+              <Route className={`h-5 w-5 ${routeExceedsRange ? 'text-red-400' : 'text-green-400'}`} />
+              <span className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                Route Planning
+              </span>
+            </div>
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Distance:</span>
+                <span className={`font-medium ${routeExceedsRange ? 'text-red-400' : 'text-green-400'}`}>
+                  {routeDistance.toFixed(2)} km
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Max Range:</span>
+                <span className={theme === 'dark' ? 'text-white' : 'text-gray-900'}>
+                  {selectedDrone.maxRange} km
+                </span>
+              </div>
+              {routeExceedsRange && (
+                <div className="mt-2 p-2 bg-red-900/30 border border-red-500 rounded text-red-300 text-xs">
+                  ⚠️ Route exceeds drone's maximum range!
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Map Container */}
       <div className={`w-full h-full ${theme === 'dark' ? 'bg-gray-800' : 'bg-gray-200'} relative`}>
         {/* Simulated Map Background */}
@@ -105,6 +148,22 @@ export default function MapView({
           </div>
         </div>
 
+        {/* Route Line */}
+        {showRoutes && selectedDrone && selectedStop && (
+          <svg className="absolute inset-0 w-full h-full pointer-events-none">
+            <line
+              x1="30%"
+              y1="40%"
+              x2="60%"
+              y2="30%"
+              stroke={routeExceedsRange ? "#EF4444" : "#10B981"}
+              strokeWidth="3"
+              strokeDasharray="8,4"
+              className="animate-pulse"
+            />
+          </svg>
+        )}
+
         {/* Drone Markers */}
         {drones.map((drone, index) => (
           <div
@@ -116,24 +175,10 @@ export default function MapView({
             }}
             onClick={() => setSelectedDrone(selectedDrone?.id === drone.id ? null : drone)}
           >
-            {/* Route Line */}
-            {showRoutes && getActiveRequests(drone.id).length > 0 && (
-              <svg className="absolute -z-10" width="200" height="100">
-                <line
-                  x1="0"
-                  y1="0"
-                  x2="150"
-                  y2="80"
-                  stroke="#10B981"
-                  strokeWidth="2"
-                  strokeDasharray="5,5"
-                  className="animate-pulse"
-                />
-              </svg>
-            )}
-
             {/* Drone Marker */}
             <div className={`relative p-3 rounded-full shadow-lg transition-all group-hover:scale-110 ${
+              selectedDrone?.id === drone.id ? 'ring-4 ring-green-400 ring-opacity-50' : ''
+            } ${
               drone.status === 'active' ? 'bg-green-500' :
               drone.status === 'low_battery' ? 'bg-yellow-500' :
               drone.status === 'charging' ? 'bg-blue-500' : 'bg-red-500'
@@ -171,6 +216,12 @@ export default function MapView({
                       </span>
                     </div>
                     <div className="flex justify-between">
+                      <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Max Range:</span>
+                      <span className={theme === 'dark' ? 'text-white' : 'text-gray-900'}>
+                        {drone.maxRange} km
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
                       <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Location:</span>
                       <span className={theme === 'dark' ? 'text-white' : 'text-gray-900'}>
                         {drone.position.lat.toFixed(4)}, {drone.position.lng.toFixed(4)}
@@ -204,6 +255,8 @@ export default function MapView({
           >
             {/* Stop Marker */}
             <div className={`relative p-3 rounded-full shadow-lg transition-all group-hover:scale-110 ${
+              selectedStop?.id === stop.id ? 'ring-4 ring-green-400 ring-opacity-50' : ''
+            } ${
               stop.available ? 'bg-green-400' : 'bg-gray-500'
             }`}>
               <MapPin className="h-6 w-6 text-black" />
@@ -225,7 +278,7 @@ export default function MapView({
                     <div className="flex items-center space-x-1">
                       <Star className="h-4 w-4 text-yellow-400 fill-current" />
                       <span className={`text-sm ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                        {stop.rating}
+                        {stop.rating.toFixed(1)}
                       </span>
                     </div>
                   </div>
@@ -245,19 +298,33 @@ export default function MapView({
                         {stop.available ? 'Available' : 'Busy'}
                       </span>
                     </div>
+                    {routeDistance !== null && (
+                      <div className="flex justify-between">
+                        <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Distance:</span>
+                        <span className={routeExceedsRange ? 'text-red-400' : 'text-green-400'}>
+                          {routeDistance.toFixed(2)} km
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {stop.available && selectedDrone && (
                     <div className="pt-3 border-t border-gray-700">
-                      <button
-                        onClick={() => handleRequestRecharge(selectedDrone.id, stop.id)}
-                        className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-black font-medium py-2 px-4 rounded-lg transition-all flex items-center justify-center"
-                      >
-                        Request Recharge
-                        <Zap className="ml-2 h-4 w-4" />
-                      </button>
+                      {routeExceedsRange ? (
+                        <div className="bg-red-900/30 border border-red-500 text-red-300 px-3 py-2 rounded-lg text-sm">
+                          ⚠️ Route exceeds {selectedDrone.name}'s max range of {selectedDrone.maxRange} km
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleRequestRecharge(selectedDrone.id, stop.id)}
+                          className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-black font-medium py-2 px-4 rounded-lg transition-all flex items-center justify-center"
+                        >
+                          Request Recharge
+                          <Zap className="ml-2 h-4 w-4" />
+                        </button>
+                      )}
                       <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'} mt-1 text-center`}>
-                        Select a drone first to request recharge
+                        {selectedDrone ? `Selected: ${selectedDrone.name}` : 'Select a drone first'}
                       </p>
                     </div>
                   )}
@@ -340,7 +407,7 @@ export default function MapView({
                   <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'} mt-1`}>
                     1. Click on a drone to select it<br/>
                     2. Click on an available charging station<br/>
-                    3. Confirm your recharge request
+                    3. Check the route distance and confirm
                   </p>
                 </div>
               </div>

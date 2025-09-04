@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { Drone } from '../types';
-import { Plus, Edit3, Trash2, Battery, MapPin, Settings, Search, Filter } from 'lucide-react';
+import { Plus, Edit3, Trash2, Battery, MapPin, Settings, Navigation } from 'lucide-react';
 import SearchFilter from './SearchFilter';
 import ConfirmDialog from './ConfirmDialog';
+import RouteBuilder from './RouteBuilder';
 
 interface DroneManagerProps {
   drones: Drone[];
   onAddDrone: (drone: Omit<Drone, 'id' | 'ownerId'>) => void;
   onUpdateDrone: (droneId: string, updates: Partial<Drone>) => void;
   onDeleteDrone: (droneId: string) => void;
+  rechargeStops: any[];
+  onShowToast: (type: string, title: string, message: string) => void;
   theme: 'dark' | 'light';
 }
 
@@ -16,12 +19,15 @@ export default function DroneManager({
   drones, 
   onAddDrone, 
   onUpdateDrone, 
-  onDeleteDrone, 
+  onDeleteDrone,
+  rechargeStops,
+  onShowToast,
   theme 
 }: DroneManagerProps) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingDrone, setEditingDrone] = useState<Drone | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [routeBuilderDrone, setRouteBuilderDrone] = useState<Drone | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({ status: '', batteryLevel: '' });
   
@@ -30,7 +36,8 @@ export default function DroneManager({
     model: '',
     batteryLevel: 100,
     status: 'active' as const,
-    position: { lat: 37.7749, lng: -122.4194 }
+    position: { lat: 37.7749, lng: -122.4194 },
+    maxRange: 50
   });
 
   const resetForm = () => {
@@ -39,7 +46,8 @@ export default function DroneManager({
       model: '',
       batteryLevel: 100,
       status: 'active',
-      position: { lat: 37.7749, lng: -122.4194 }
+      position: { lat: 37.7749, lng: -122.4194 },
+      maxRange: 50
     });
     setShowAddForm(false);
     setEditingDrone(null);
@@ -50,8 +58,10 @@ export default function DroneManager({
     
     if (editingDrone) {
       onUpdateDrone(editingDrone.id, formData);
+      onShowToast('success', 'Drone Updated', `${formData.name} has been updated successfully.`);
     } else {
       onAddDrone(formData);
+      onShowToast('success', 'Drone Added', `${formData.name} has been added to your fleet.`);
     }
     
     resetForm();
@@ -63,7 +73,8 @@ export default function DroneManager({
       model: drone.model,
       batteryLevel: drone.batteryLevel,
       status: drone.status,
-      position: drone.position
+      position: drone.position,
+      maxRange: drone.maxRange
     });
     setEditingDrone(drone);
     setShowAddForm(true);
@@ -129,7 +140,7 @@ export default function DroneManager({
           
           <button
             onClick={() => setShowAddForm(true)}
-            className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-black font-semibold py-3 px-6 rounded-lg transition-all flex items-center group"
+            className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-black font-semibold py-3 px-6 rounded-lg transition-all flex items-center group shadow-lg"
           >
             <Plus className="h-5 w-5 mr-2 group-hover:rotate-90 transition-transform" />
             Add Drone
@@ -252,7 +263,7 @@ export default function DroneManager({
             </h3>
             <p className={`${theme === 'dark' ? 'text-gray-500' : 'text-gray-500'} mb-4`}>
               {drones.length === 0 
-                ? 'Add your first drone to start using the DroneNet community'
+                ? 'Add your first drone to start using the Sparrow community'
                 : 'Try adjusting your search terms or filters'
               }
             </p>
@@ -340,23 +351,43 @@ export default function DroneManager({
 
                   <div>
                     <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                      Status
+                      Max Range (KM)
                     </label>
-                    <select
-                      value={formData.status}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                    <input
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={formData.maxRange}
+                      onChange={(e) => setFormData({ ...formData, maxRange: parseInt(e.target.value) })}
                       className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
                         theme === 'dark'
                           ? 'bg-gray-700 border-gray-600 text-white'
                           : 'bg-white border-gray-300 text-gray-900'
                       }`}
-                    >
-                      <option value="active">Active</option>
-                      <option value="low_battery">Low Battery</option>
-                      <option value="charging">Charging</option>
-                      <option value="offline">Offline</option>
-                    </select>
+                      placeholder="50"
+                      required
+                    />
                   </div>
+                </div>
+
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                    Status
+                  </label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                      theme === 'dark'
+                        ? 'bg-gray-700 border-gray-600 text-white'
+                        : 'bg-white border-gray-300 text-gray-900'
+                    }`}
+                  >
+                    <option value="active">Active</option>
+                    <option value="low_battery">Low Battery</option>
+                    <option value="charging">Charging</option>
+                    <option value="offline">Offline</option>
+                  </select>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

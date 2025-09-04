@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plane as Drone, MapPin, Users, Zap, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Plane as Drone, MapPin, Users, Zap, ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react';
 
 interface LandingPageProps {
   onLogin: (email: string, password: string) => void;
@@ -8,8 +8,6 @@ interface LandingPageProps {
 
 export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
   const [isLogin, setIsLogin] = useState(true);
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -53,8 +51,14 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1500));
       
+      // Mock authentication - in real app, validate against backend
       if (isLogin) {
-        onLogin(formData.email, formData.password);
+        // Mock login validation
+        if (formData.email === 'demo@sparrow.com' && formData.password === 'password') {
+          onLogin(formData.email, formData.password);
+        } else {
+          setErrors({ general: 'Invalid email or password. Try demo@sparrow.com / password' });
+        }
       } else {
         onRegister(formData.email, formData.password, formData.name);
       }
@@ -87,7 +91,7 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
             
             <h1 className="text-5xl md:text-7xl font-bold text-white mb-6">
               <span className="bg-gradient-to-r from-green-400 to-green-600 bg-clip-text text-transparent">
-                DroneNet
+                Sparrow
               </span>
             </h1>
             
@@ -97,19 +101,19 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
             </p>
 
             <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto mb-12">
-              <div className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl border border-green-500/20">
+              <div className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl border border-green-500/20 hover:border-green-500/40 transition-all">
                 <MapPin className="h-8 w-8 text-green-400 mb-4 mx-auto" />
                 <h3 className="text-lg font-semibold text-white mb-2">Global Network</h3>
                 <p className="text-gray-400">Access charging stops worldwide</p>
               </div>
               
-              <div className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl border border-green-500/20">
+              <div className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl border border-green-500/20 hover:border-green-500/40 transition-all">
                 <Users className="h-8 w-8 text-green-400 mb-4 mx-auto" />
                 <h3 className="text-lg font-semibold text-white mb-2">Community Driven</h3>
                 <p className="text-gray-400">Powered by drone pilots like you</p>
               </div>
               
-              <div className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl border border-green-500/20">
+              <div className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl border border-green-500/20 hover:border-green-500/40 transition-all">
                 <Zap className="h-8 w-8 text-green-400 mb-4 mx-auto" />
                 <h3 className="text-lg font-semibold text-white mb-2">Smart Credits</h3>
                 <p className="text-gray-400">Earn credits by hosting, spend to charge</p>
@@ -121,14 +125,14 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
 
       {/* Auth Section */}
       <div className="max-w-md mx-auto px-4 pb-12">
-        <div className="bg-gray-800/80 backdrop-blur-sm rounded-2xl p-8 border border-green-500/30">
+        <div className="bg-gray-800/80 backdrop-blur-sm rounded-2xl p-8 border border-green-500/30 shadow-2xl">
           <div className="flex mb-6">
             <button
               onClick={() => setIsLogin(true)}
               className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all ${
                 isLogin
-                  ? 'bg-green-500 text-black'
-                  : 'text-gray-400 hover:text-white'
+                  ? 'bg-green-500 text-black shadow-lg'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
               }`}
             >
               Login
@@ -137,8 +141,8 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
               onClick={() => setIsLogin(false)}
               className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all ${
                 !isLogin
-                  ? 'bg-green-500 text-black'
-                  : 'text-gray-400 hover:text-white'
+                  ? 'bg-green-500 text-black shadow-lg'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
               }`}
             >
               Register
@@ -147,7 +151,7 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {errors.general && (
-              <div className="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded-lg text-sm">
+              <div className="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded-lg text-sm animate-scale-in">
                 {errors.general}
               </div>
             )}
@@ -161,7 +165,7 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
                   type="text"
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  className={`w-full px-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-1 transition-colors ${
+                  className={`w-full px-4 py-3 bg-gray-700/50 backdrop-blur-sm border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all ${
                     errors.name 
                       ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
                       : 'border-gray-600 focus:border-green-500 focus:ring-green-500'
@@ -170,7 +174,7 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
                   disabled={isLoading}
                 />
                 {errors.name && (
-                  <p className="text-red-400 text-sm mt-1">{errors.name}</p>
+                  <p className="text-red-400 text-sm mt-1 animate-scale-in">{errors.name}</p>
                 )}
               </div>
             )}
@@ -183,7 +187,7 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
-                className={`w-full px-4 py-3 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-1 transition-colors ${
+                className={`w-full px-4 py-3 bg-gray-700/50 backdrop-blur-sm border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all ${
                   errors.email 
                     ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
                     : 'border-gray-600 focus:border-green-500 focus:ring-green-500'
@@ -192,7 +196,7 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
                 disabled={isLoading}
               />
               {errors.email && (
-                <p className="text-red-400 text-sm mt-1">{errors.email}</p>
+                <p className="text-red-400 text-sm mt-1 animate-scale-in">{errors.email}</p>
               )}
             </div>
             
@@ -205,7 +209,7 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
                   type={showPassword ? "text" : "password"}
                   value={formData.password}
                   onChange={(e) => handleInputChange('password', e.target.value)}
-                  className={`w-full px-4 py-3 pr-12 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-1 transition-colors ${
+                  className={`w-full px-4 py-3 pr-12 bg-gray-700/50 backdrop-blur-sm border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all ${
                     errors.password 
                       ? 'border-red-500 focus:border-red-500 focus:ring-red-500' 
                       : 'border-gray-600 focus:border-green-500 focus:ring-green-500'
@@ -223,14 +227,14 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
                 </button>
               </div>
               {errors.password && (
-                <p className="text-red-400 text-sm mt-1">{errors.password}</p>
+                <p className="text-red-400 text-sm mt-1 animate-scale-in">{errors.password}</p>
               )}
             </div>
             
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed text-black font-semibold py-3 px-4 rounded-lg transition-all flex items-center justify-center group"
+              className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed text-black font-semibold py-3 px-4 rounded-lg transition-all flex items-center justify-center group shadow-lg"
             >
               {isLoading ? (
                 <>
@@ -251,6 +255,9 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
               <button className="text-green-400 hover:text-green-300 text-sm transition-colors">
                 Forgot your password?
               </button>
+              <div className="mt-3 text-xs text-gray-500">
+                Demo: demo@sparrow.com / password
+              </div>
             </div>
           )}
         </div>

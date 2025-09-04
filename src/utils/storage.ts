@@ -66,11 +66,10 @@ export const generateMockData = () => {
       batteryLevel: 20 + Math.floor(Math.random() * 80),
       status: ['active', 'low_battery', 'charging'][Math.floor(Math.random() * 3)] as any,
       maxRange: 15 + Math.floor(Math.random() * 35), // 15-50km range
-      maxRange: 15 + Math.floor(Math.random() * 35), // 15-50km range
       position: {
         lat: city.lat + (Math.random() - 0.5) * 0.02,
         lng: city.lng + (Math.random() - 0.5) * 0.02
-      }
+      },
       ownerId: 'user_1'
     })),
     rechargeStops: cities.map((city, index) => ({

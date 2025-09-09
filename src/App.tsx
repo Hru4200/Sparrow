@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useToast } from './hooks/useToast';
 import { User } from './types';
 import LandingPage from './components/LandingPage';
 import Dashboard from './components/Dashboard';
+import Blog from './components/Blog';
+import SilkRoadPage from './components/SilkRoadPage';
+import RechargeRequests from './components/RechargeRequests';
 import { loadFromStorage, saveToStorage, STORAGE_KEYS } from './utils/storage';
 
 export default function App() {
@@ -56,13 +60,25 @@ export default function App() {
   const handleToggleTheme = () => {
     const newTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(newTheme);
+            <Route path="/blog" element={<Blog />} />
     saveToStorage(STORAGE_KEYS.THEME, newTheme);
   };
+  const { toasts, removeToast } = useToast();
 
   if (!user) {
+            <Route path="/silk-road" element={
+              <PrivateRoute>
+                <SilkRoadPage />
+              </PrivateRoute>
+            } />
+            <Route path="/recharge-requests" element={
+              <PrivateRoute>
+                <RechargeRequests />
+              </PrivateRoute>
+            } />
     return (
       <LandingPage 
-        onLogin={handleLogin} 
+          <ToastContainer toasts={toasts} onRemove={removeToast} theme="dark" />
         onRegister={handleRegister} 
       />
     );

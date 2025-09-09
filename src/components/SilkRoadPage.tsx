@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Plus, ThumbsUp, ThumbsDown, Filter, Search, Star, Clock, User } from 'lucide-react';
-import { ProposedStation, User as UserType } from '../types';
+import { ProposedStation } from '../types';
 import { loadFromStorage, saveToStorage, STORAGE_KEYS } from '../utils/storage';
+import { useAuth } from '../contexts/AuthContext';
 
 interface SilkRoadPageProps {
-  user: UserType;
   theme: 'dark' | 'light';
   onShowToast: (type: 'success' | 'error' | 'warning' | 'info', title: string, message: string) => void;
 }
 
-export default function SilkRoadPage({ user, theme, onShowToast }: SilkRoadPageProps) {
+export default function SilkRoadPage({ theme, onShowToast }: SilkRoadPageProps) {
+  const { user } = useAuth();
   const [proposedStations, setProposedStations] = useState<ProposedStation[]>([]);
   const [showProposalForm, setShowProposalForm] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<{ lat: number; lng: number } | null>(null);
@@ -23,6 +24,19 @@ export default function SilkRoadPage({ user, theme, onShowToast }: SilkRoadPageP
     notes: ''
   });
 
+  if (!user) {
+    return (
+      <div className={`p-6 ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'} min-h-[calc(100vh-4rem)]`}>
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center">
+            <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-300 mb-2">Please log in</h3>
+            <p className="text-gray-500">You need to be logged in to access the Silk Road.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
   useEffect(() => {
     const stored = loadFromStorage(STORAGE_KEYS.PROPOSED_STATIONS, []);
     setProposedStations(stored);

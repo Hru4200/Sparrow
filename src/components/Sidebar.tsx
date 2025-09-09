@@ -1,20 +1,24 @@
 import React from 'react';
-import { Map, Settings, Zap, ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
+import { Map, Settings, Zap, ChevronLeft, ChevronRight, MapPin, BookOpen } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
 
 interface SidebarProps {
-  activeView: 'map' | 'drones' | 'requests' | 'silk-road';
-  onViewChange: (view: 'map' | 'drones' | 'requests' | 'silk-road') => void;
+  activeView: 'map' | 'drones' | 'requests' | 'silk-road' | 'blog';
+  onViewChange: (view: 'map' | 'drones' | 'requests' | 'silk-road' | 'blog') => void;
   isOpen: boolean;
   onToggle: () => void;
   theme: 'dark' | 'light';
 }
 
 export default function Sidebar({ activeView, onViewChange, isOpen, onToggle, theme }: SidebarProps) {
+  const location = useLocation();
+  
   const menuItems = [
-    { id: 'map', label: 'Map View', icon: Map },
-    { id: 'drones', label: 'My Drones', icon: Settings },
-    { id: 'requests', label: 'Recharge Requests', icon: Zap },
-    { id: 'silk-road', label: 'Silk Road', icon: MapPin }
+    { id: 'map', label: 'Map View', icon: Map, path: '/dashboard' },
+    { id: 'drones', label: 'My Drones', icon: Settings, path: '/drones' },
+    { id: 'requests', label: 'Recharge Requests', icon: Zap, path: '/recharge-requests' },
+    { id: 'silk-road', label: 'Silk Road', icon: MapPin, path: '/silk-road' },
+    { id: 'blog', label: 'Blog', icon: BookOpen, path: '/blog' }
   ];
 
   return (
@@ -36,12 +40,12 @@ export default function Sidebar({ activeView, onViewChange, isOpen, onToggle, th
         <nav className="flex-1 p-4 space-y-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const isActive = activeView === item.id;
+            const isActive = location.pathname === item.path;
             
             return (
-              <button
+              <Link
                 key={item.id}
-                onClick={() => onViewChange(item.id as 'map' | 'drones' | 'requests' | 'silk-road')}
+                to={item.path}
                 className={`w-full flex items-center ${isOpen ? 'px-4 py-3' : 'px-2 py-3 justify-center'} rounded-lg transition-all ${
                   isActive
                     ? 'bg-gradient-to-r from-green-500 to-green-600 text-black'
@@ -57,7 +61,7 @@ export default function Sidebar({ activeView, onViewChange, isOpen, onToggle, th
                     {item.label}
                   </span>
                 )}
-              </button>
+              </Link>
             );
           })}
         </nav>

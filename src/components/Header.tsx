@@ -1,26 +1,23 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { User, LogOut, Moon, Sun, Coins } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { User as UserType } from '../types';
 
 interface HeaderProps {
+  user: UserType;
+  onLogout: () => void;
   onToggleTheme: () => void;
   theme: 'dark' | 'light';
 }
 
-export default function Header({ onToggleTheme, theme }: HeaderProps) {
-  const { user, logout } = useAuth();
-
-  if (!user) return null;
-
+export default function Header({ user, onLogout, onToggleTheme, theme }: HeaderProps) {
   return (
     <header className={`${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-b px-6 py-4 flex items-center justify-between transition-colors`}>
       <div className="flex items-center space-x-4">
-        <Link to="/dashboard" className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'} hover:opacity-80 transition-opacity cursor-pointer`}>
+        <h1 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
           <span className="bg-gradient-to-r from-green-400 to-green-600 bg-clip-text text-transparent">
-            Sparrow
+            DroneNet
           </span>
-        </Link>
+        </h1>
       </div>
 
       <div className="flex items-center space-x-4">
@@ -54,7 +51,7 @@ export default function Header({ onToggleTheme, theme }: HeaderProps) {
         </div>
 
         <button
-          onClick={logout}
+          onClick={onLogout}
           className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-red-600 hover:bg-red-700' : 'bg-red-500 hover:bg-red-600'} text-white transition-colors`}
           title="Logout"
         >

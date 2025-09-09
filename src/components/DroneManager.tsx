@@ -1,23 +1,33 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Drone } from '../types';
 import { Plus, Edit3, Trash2, Battery, MapPin, Settings, Navigation } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { loadFromStorage, saveToStorage, STORAGE_KEYS } from '../utils/storage';
-import { useToast } from '../hooks/useToast';
 import SearchFilter from './SearchFilter';
 import ConfirmDialog from './ConfirmDialog';
+import RouteBuilder from './RouteBuilder';
 
 interface DroneManagerProps {
+  drones: Drone[];
+  onAddDrone: (drone: Omit<Drone, 'id' | 'ownerId'>) => void;
+  onUpdateDrone: (droneId: string, updates: Partial<Drone>) => void;
+  onDeleteDrone: (droneId: string) => void;
+  rechargeStops: any[];
+  onShowToast: (type: string, title: string, message: string) => void;
   theme: 'dark' | 'light';
 }
 
-export default function DroneManager({ theme }: DroneManagerProps) {
-  const { user } = useAuth();
-  const { showSuccess, showError } = useToast();
-  const [drones, setDrones] = useState<Drone[]>([]);
+export default function DroneManager({ 
+  drones, 
+  onAddDrone, 
+  onUpdateDrone, 
+  onDeleteDrone,
+  rechargeStops,
+  onShowToast,
+  theme 
+}: DroneManagerProps) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingDrone, setEditingDrone] = useState<Drone | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [routeBuilderDrone, setRouteBuilderDrone] = useState<Drone | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({ status: '', batteryLevel: '' });
   
@@ -29,22 +39,6 @@ export default function DroneManager({ theme }: DroneManagerProps) {
     position: { lat: 37.7749, lng: -122.4194 },
     maxRange: 50
   });
-
-  useEffect(() => {
-    if (user) {
-      const storedDrones = loadFromStorage(STORAGE_KEYS.DRONES, []);
-      setDrones(storedDrones.filter((drone: Drone) => drone.ownerId === user.id));
-    }
-  }, [user]);
-
-  const saveDrones = (updatedDrones: Drone[]) => {
-    const allDrones = loadFromStorage(STORAGE_KEYS.DRONES, []);
-    const otherDrones = allDrones.filter((drone: Drone) => drone.ownerId !== user?.id);
-    const newAllDrones = [...otherDrones, ...updatedDrones];
-    
-    setDrones(updatedDrones);
-    saveToStorage(STORAGE_KEYS.DRONES, newAllDrones);
-  };
 
   const resetForm = () => {
     setFormData({
@@ -62,22 +56,12 @@ export default function DroneManager({ theme }: DroneManagerProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!user) return;
-    
     if (editingDrone) {
-      const updatedDrones = drones.map(drone => 
-        drone.id === editingDrone.id ? { ...drone, ...formData } : drone
-      );
-      saveDrones(updatedDrones);
-      showSuccess('Drone Updated', `${formData.name} has been updated successfully.`);
+      onUpdateDrone(editingDrone.id, formData);
+      onShowToast('success', 'Drone Updated', `${formData.name} has been updated successfully.`);
     } else {
-      const newDrone: Drone = {
-        ...formData,
-        id: `drone_${Date.now()}`,
-        ownerId: user.id
-      };
-      saveDrones([...drones, newDrone]);
-      showSuccess('Drone Added', `${formData.name} has been added to your fleet.`);
+      onAddDrone(formData);
+      onShowToast('success', 'Drone Added', `${formData.name} has been added to your fleet.`);
     }
     
     resetForm();
@@ -97,10 +81,17 @@ export default function DroneManager({ theme }: DroneManagerProps) {
   };
 
   const handleDelete = (droneId: string) => {
-    const updatedDrones = drones.filter(drone => drone.id !== droneId);
-    saveDrones(updatedDrones);
+    onDeleteDrone(droneId);
     setDeleteConfirm(null);
-    showSuccess('Drone Deleted', 'The drone has been removed from your fleet.');
+    onShowToast('success', 'Drone Deleted', 'The drone has been removed from your fleet.');
+  };
+
+  const handleSaveRoute = (waypoints: any[], chargingStops: string[]) => {
+    if (routeBuilderDrone) {
+      // In a real app, this would save the route to the drone
+      onShowToast('success', 'Route Saved', `Route planned for ${routeBuilderDrone.name} with ${waypoints.length} waypoints.`);
+      setRouteBuilderDrone(null);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -134,20 +125,6 @@ export default function DroneManager({ theme }: DroneManagerProps) {
     
     return matchesSearch && matchesStatus && matchesBattery;
   });
-
-  if (!user) {
-    return (
-      <div className={`p-6 ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'} min-h-[calc(100vh-4rem)]`}>
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center">
-            <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-300 mb-2">Please log in</h3>
-            <p className="text-gray-500">You need to be logged in to manage drones.</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className={`p-6 ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'} min-h-[calc(100vh-4rem)]`}>
@@ -206,6 +183,13 @@ export default function DroneManager({ theme }: DroneManagerProps) {
                 </div>
                 
                 <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => setRouteBuilderDrone(drone)}
+                    className={`p-2 rounded-lg ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} transition-colors`}
+                    title="Plan route"
+                  >
+                    <Navigation className="h-4 w-4" />
+                  </button>
                   <button
                     onClick={() => handleEdit(drone)}
                     className={`p-2 rounded-lg ${theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} transition-colors`}
@@ -486,6 +470,17 @@ export default function DroneManager({ theme }: DroneManagerProps) {
           theme={theme}
           type="danger"
         />
+
+        {/* Route Builder */}
+        {routeBuilderDrone && (
+          <RouteBuilder
+            drone={routeBuilderDrone}
+            rechargeStops={rechargeStops}
+            onSaveRoute={handleSaveRoute}
+            onClose={() => setRouteBuilderDrone(null)}
+            theme={theme}
+          />
+        )}
       </div>
     </div>
   );

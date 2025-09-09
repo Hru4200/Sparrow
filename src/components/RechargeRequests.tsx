@@ -1,39 +1,24 @@
 import React, { useState } from 'react';
-import { RechargeRequest } from '../types';
+import { RechargeRequest, Drone, RechargeStop } from '../types';
 import { Clock, CheckCircle, XCircle, AlertCircle, Battery, MapPin, User, Coins } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { loadFromStorage, STORAGE_KEYS } from '../utils/storage';
 
 interface RechargeRequestsProps {
+  requests: RechargeRequest[];
+  drones: Drone[];
+  rechargeStops: RechargeStop[];
   onUpdateRequest: (requestId: string, status: 'accepted' | 'completed' | 'rejected') => void;
   theme: 'dark' | 'light';
 }
 
 export default function RechargeRequests({ 
+  requests, 
+  drones, 
+  rechargeStops, 
   onUpdateRequest, 
   theme 
 }: RechargeRequestsProps) {
-  const { user } = useAuth();
   const [filter, setFilter] = useState<'all' | 'pending' | 'accepted' | 'completed' | 'rejected'>('all');
-  
-  // Load data from storage
-  const requests = loadFromStorage(STORAGE_KEYS.RECHARGE_REQUESTS, []);
-  const drones = loadFromStorage(STORAGE_KEYS.DRONES, []);
-  const rechargeStops = loadFromStorage(STORAGE_KEYS.RECHARGE_STOPS, []);
 
-  if (!user) {
-    return (
-      <div className={`p-6 ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'} min-h-[calc(100vh-4rem)]`}>
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center">
-            <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-300 mb-2">Please log in</h3>
-            <p className="text-gray-500">You need to be logged in to view recharge requests.</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending': return <Clock className="h-5 w-5 text-yellow-400" />;

@@ -1,65 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { Drone, RechargeStop } from '../types';
+import { Drone, RechargeStop, RechargeRequest } from '../types';
 import { MapPin, Zap, Battery, Clock, Star, Navigation, AlertTriangle, Route } from 'lucide-react';
 import { calculateDistance } from '../utils/routeCalculations';
-import { useAuth } from '../contexts/AuthContext';
-import { loadFromStorage, saveToStorage, STORAGE_KEYS } from '../utils/storage';
-import { useToast } from '../hooks/useToast';
-import InteractiveMap from './InteractiveMap';
 
 interface MapViewProps {
+  drones: Drone[];
+  rechargeStops: RechargeStop[];
+  rechargeRequests: RechargeRequest[];
+  onCreateRechargeRequest: (droneId: string, stopId: string) => void;
   theme: 'dark' | 'light';
 }
 
-export default function MapView({ theme }: MapViewProps) {
-  const { user } = useAuth();
-  const { showSuccess, showError } = useToast();
+export default function MapView({ 
+  drones, 
+  rechargeStops, 
+  rechargeRequests, 
+  onCreateRechargeRequest, 
+  theme 
+}: MapViewProps) {
   const [selectedDrone, setSelectedDrone] = useState<Drone | null>(null);
   const [selectedStop, setSelectedStop] = useState<RechargeStop | null>(null);
   const [showRoutes, setShowRoutes] = useState(true);
   const [routeDistance, setRouteDistance] = useState<number | null>(null);
   const [routeExceedsRange, setRouteExceedsRange] = useState(false);
-
-  // Load data from storage
-  const drones = loadFromStorage(STORAGE_KEYS.DRONES, []);
-  const rechargeStops = loadFromStorage(STORAGE_KEYS.RECHARGE_STOPS, []);
-  const rechargeRequests = loadFromStorage(STORAGE_KEYS.RECHARGE_REQUESTS, []);
-
-  if (!user) {
-    return (
-      <div className={`h-[calc(100vh-4rem)] ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'} flex items-center justify-center`}>
-        <div className="text-center">
-          <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-300 mb-2">Please log in</h3>
-          <p className="text-gray-500">You need to be logged in to view the map.</p>
-        </div>
-      </div>
-    );
-  }
-
-  const onCreateRechargeRequest = (droneId: string, stopId: string) => {
-    const drone = drones.find((d: Drone) => d.id === droneId);
-    const stop = rechargeStops.find((s: RechargeStop) => s.id === stopId);
-    
-    if (!drone || !stop) return;
-
-    const newRequest = {
-      id: `request_${Date.now()}`,
-      droneId,
-      stopId,
-      requesterId: user.id,
-      hostId: stop.hostId,
-      status: 'pending',
-      credits: stop.credits,
-      createdAt: new Date(),
-      estimatedDuration: 30 + Math.floor(Math.random() * 60)
-    };
-
-    const updatedRequests = [...rechargeRequests, newRequest];
-    saveToStorage(STORAGE_KEYS.RECHARGE_REQUESTS, updatedRequests);
-    
-    showSuccess('Request Sent', `Recharge request sent for ${drone.name} at ${stop.name}`);
-  };
 
   // Calculate route distance when both drone and stop are selected
   useEffect(() => {
@@ -109,40 +72,6 @@ export default function MapView({ theme }: MapViewProps) {
 
   return (
     <div className={`h-[calc(100vh-4rem)] ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'} relative overflow-hidden`}>
-      {/* Interactive Map */}
-      <div className="absolute inset-0">
-        <InteractiveMap
-          center={[37.7749, -122.4194]}
-          zoom={10}
-          markers={[
-            ...drones.map((drone: Drone) => ({
-              id: drone.id,
-              position: [drone.position.lat, drone.position.lng] as [number, number],
-              type: 'drone' as const,
-              title: drone.name,
-              description: `${drone.model} - Battery: ${drone.batteryLevel}%`,
-              onClick: () => setSelectedDrone(selectedDrone?.id === drone.id ? null : drone)
-            })),
-            ...rechargeStops.map((stop: RechargeStop) => ({
-              id: stop.id,
-              position: [stop.position.lat, stop.position.lng] as [number, number],
-              type: 'station' as const,
-              title: stop.name,
-              description: `Host: ${stop.hostName} - ${stop.credits} credits`,
-              onClick: () => setSelectedStop(selectedStop?.id === stop.id ? null : stop)
-            }))
-          ]}
-          routes={selectedDrone && selectedStop ? [{
-            positions: [
-              [selectedDrone.position.lat, selectedDrone.position.lng],
-              [selectedStop.position.lat, selectedStop.position.lng]
-            ] as [number, number][],
-            color: routeExceedsRange ? 'red' : '#10B981'
-          }] : []}
-          className="h-full w-full"
-        />
-      </div>
-
       {/* Map Controls */}
       <div className="absolute top-4 left-4 z-10 space-y-2">
         <div className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-3 border ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
